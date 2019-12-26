@@ -1,39 +1,33 @@
 import org.junit.Test;
-
-import java.util.List;
+import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import static java.util.Arrays.asList;
-import static org.junit.Assert.assertEquals;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.*;
 
+@RunWith(MockitoJUnitRunner.class)
 public class NotificationServiceTest {
+    @Mock
+    private SmSService smSService;
 
-    static class SmsServiceStub implements SmSService {
-        String lastPhoneNumber;
-        int calledTimes = 0;
+    @Mock
+    private UserService userService;
 
-        @Override
-        public void send(String phoneNumber, String content) {
-            calledTimes += 1;
-            lastPhoneNumber = phoneNumber;
-        }
-    }
+    @InjectMocks
+    private NotificationService notificationService;
 
     @Test
     public void should_notify_users_who_accept_notification() {
-        SmsServiceStub smSService = new SmsServiceStub();
-        UserService userService = new UserService() {
-            @Override
-            public List<User> getIphoneUsers() {
-                return asList(
-                        new User(true, "17345041219"),
-                        new User());
-            }
-        };
+        when(userService.getIphoneUsers()).thenReturn(asList(
+                new User(true, "17345041219"),
+                new User()));
 
-        NotificationService notificationService = new NotificationService(userService, smSService);
         notificationService.notifyUsers();
 
-        assertEquals(1, smSService.calledTimes);
-        assertEquals("17345041219", smSService.lastPhoneNumber);
+        verify(smSService, times(1)).send(eq("17345041219"), anyString());
     }
 }
